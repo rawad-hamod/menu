@@ -1,13 +1,41 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+model Restaurant {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?
+  logoUrl     String?
+  email       String   @unique // owner's login email
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sections    MenuSection[]
+}
+
+model MenuSection {
+  id          String   @id @default(cuid())
+  name        String
+  displayOrder Int     @default(0)
+  restaurantId String
+  restaurant  Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  items       MenuItem[]
+}
+
+model MenuItem {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Decimal  @db.Decimal(10,2)
+  imageUrl    String?
+  isAvailable Boolean  @default(true)
+  displayOrder Int     @default(0)
+  sectionId   String
+  section     MenuSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 }
