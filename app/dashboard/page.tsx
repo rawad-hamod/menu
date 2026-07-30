@@ -1,4 +1,4 @@
-// app/dashboard/page.tsx
+
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { signOut } from '@/actions/auth'
