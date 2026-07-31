@@ -16,7 +16,9 @@ export default async function DashboardPage() {
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold">Dashboard</h1>
-          <form action={signOut}>
+          <form action={async () => {
+            await signOut()
+          }}>
             <button
               type="submit"
               className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition"
