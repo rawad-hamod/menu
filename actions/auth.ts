@@ -126,13 +126,14 @@ export async function signIn(formData: FormData) {
   }
 }
 
-export async function signOut() {
+export async function signOut(formData?: FormData): Promise<void> {
+  void formData
+
   try {
     const supabase = await createClient()
     await supabase.auth.signOut()
-    return { success: true }
   } catch (err: unknown) {
     console.error('signOut error:', err)
-    return { error: (err as Error)?.message ?? String(err) }
+    throw err
   }
 }

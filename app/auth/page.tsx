@@ -27,7 +27,7 @@ export default function AuthPage() {
 
       if (result?.success) {
         setSuccessMessage(result.message ?? 'Success!')
-        window.setTimeout(() => router.push('/dashboard'), 1200)
+        window.setTimeout(() => router.push('/dashboard'), 500)
       }
     })
   }

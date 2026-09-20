@@ -4,8 +4,10 @@
 import { prisma } from '@/lib/prisma'
 
 export async function getPublicMenu(slug: string) {
-  const restaurant = await prisma.restaurant.findUnique({
-    where: { slug },
+  const normalizedSlug = slug.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+
+  const restaurant = await prisma.restaurant.findFirst({
+    where: { slug: { equals: normalizedSlug, mode: 'insensitive' } },
     select: {
       id: true,
       name: true,

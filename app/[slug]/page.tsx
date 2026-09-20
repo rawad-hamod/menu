@@ -3,13 +3,13 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 
 interface PageProps {
-  params: {
-    slug: string
-  }
+  params: { slug: string } | Promise<{ slug: string }>
 }
 
 export default async function PublicMenuPage({ params }: PageProps) {
-  const restaurant = await getPublicMenu(params.slug)
+  const { slug } = (await params) as { slug: string }
+  const normalizedSlug = slug.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+  const restaurant = await getPublicMenu(normalizedSlug)
 
   if (!restaurant) {
     notFound()
@@ -22,7 +22,7 @@ export default async function PublicMenuPage({ params }: PageProps) {
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="flex items-center gap-6">
             {restaurant.logoUrl && (
-              <div className="w-24 h-24 relative flex-shrink-0">
+              <div className="w-24 h-24 relative shrink-0">
                 <Image
                   src={restaurant.logoUrl}
                   alt={restaurant.name}
@@ -45,7 +45,7 @@ export default async function PublicMenuPage({ params }: PageProps) {
       <div className="max-w-4xl mx-auto px-4 py-8">
         {restaurant.sections.length === 0 ? (
           <p className="text-center text-gray-500 py-12">
-            This restaurant hasn't added any menu items yet.
+            This restaurant has not added any menu items yet.
           </p>
         ) : (
           <div className="space-y-12">
@@ -66,7 +66,7 @@ export default async function PublicMenuPage({ params }: PageProps) {
                         }`}
                       >
                         {item.imageUrl && (
-                          <div className="w-24 h-24 relative flex-shrink-0">
+                          <div className="w-24 h-24 relative shrink-0">
                             <Image
                               src={item.imageUrl}
                               alt={item.name}
