@@ -8,6 +8,7 @@ import MenuEditor from '../components/MenuEditor'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
+  console.log('Supabase client created:', supabase.auth.getUser())
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -15,7 +16,7 @@ export default async function DashboardPage() {
   }
 
   // Get restaurant data with menu
-  const restaurant = await getRestaurantMenu(user.id);
+  const restaurant = await getRestaurantMenu();
   console.log(restaurant)
 
   if (!restaurant) {

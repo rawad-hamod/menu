@@ -13,6 +13,58 @@ const signUpSchema = z.object({
   slug: z.string().trim().min(1).regex(/^[a-z0-9-]+$/, 'Slug must be lowercase letters, numbers, and hyphens only'),
 })
 
+async function ensureRestaurantProfile(user: {
+  id: string
+  email?: string
+  user_metadata?: Record<string, unknown>
+}) {
+  if (!user.email) {
+    return { error: 'Your account does not have an email address.' }
+  }
+
+  const normalizedEmail = user.email.toLowerCase()
+  const existingRestaurant = await prisma.restaurant.findFirst({
+    where: {
+      OR: [{ id: user.id }, { email: normalizedEmail }],
+    },
+  })
+
+  if (existingRestaurant) {
+    return { success: true }
+  }
+
+  const restaurantName = user.user_metadata?.restaurant_name
+  const slug = user.user_metadata?.slug
+
+  if (typeof restaurantName !== 'string' || typeof slug !== 'string') {
+    return { error: 'Your account has no restaurant profile. Please contact support.' }
+  }
+
+  try {
+    await prisma.restaurant.create({
+      data: {
+        id: user.id,
+        email: normalizedEmail,
+        name: restaurantName,
+        slug,
+      },
+    })
+    return { success: true }
+  } catch (error: unknown) {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      (error as { code?: string }).code === 'P2002'
+    ) {
+      return { error: 'A restaurant with this slug or email already exists.' }
+    }
+
+    console.error('Restaurant profile provisioning error:', error)
+    return { error: 'Failed to create the restaurant profile.' }
+  }
+}
+
 export async function signUp(formData: FormData) {
   const supabase = await createClient()
 
@@ -111,13 +163,20 @@ export async function signIn(formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   })
 
   if (error) {
     return { error: error.message }
+  }
+
+  if (data.user) {
+    const profileResult = await ensureRestaurantProfile(data.user)
+    if (profileResult.error) {
+      return { error: profileResult.error }
+    }
   }
 
   return {

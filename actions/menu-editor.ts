@@ -21,16 +21,21 @@ const itemSchema = z.object({
 })
 
 // Get all sections and items for a restaurant
-export async function getRestaurantMenu(restaurantId: string) {
+export async function getRestaurantMenu() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) {
+  if (!user || !user.email) {
     return null
   }
 
-  const restaurant = await prisma.restaurant.findUnique({
-    where: { id: restaurantId },
+  const restaurant = await prisma.restaurant.findFirst({
+    where: {
+      OR: [
+        { id: user.id },
+        { email: user.email.toLowerCase() },
+      ],
+    },
     select: {
       id: true,
       name: true,
