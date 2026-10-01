@@ -9,6 +9,7 @@ import {
   createItem,
   deleteItem,
   toggleItemAvailability,
+  updateItemPhoto,
 } from '@/actions/menu-editor'
 
 type Section = {
@@ -91,6 +92,18 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
     setError(null)
     startTransition(async () => {
       const result = await deleteItem(itemId)
+      if (result.error) {
+        setError(result.error)
+      } else {
+        window.location.reload()
+      }
+    })
+  }
+
+  const handleUpdateItemPhoto = async (itemId: string, formData: FormData) => {
+    setError(null)
+    startTransition(async () => {
+      const result = await updateItemPhoto(itemId, formData)
       if (result.error) {
         setError(result.error)
       } else {
@@ -188,6 +201,15 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
                     required
                     className="border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                   />
+                  <label className="flex flex-col gap-1 text-sm text-gray-600 md:col-span-2">
+                    Item photo (optional, JPEG, PNG, or WebP; max 5 MB)
+                    <input
+                      type="file"
+                      name="image"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-gray-200 file:px-3 file:py-2 file:text-gray-700 hover:file:bg-gray-300"
+                    />
+                  </label>
                   <div className="flex items-center gap-4">
                     <label className="flex items-center gap-2 text-sm">
                       <input type="checkbox" name="isAvailable" defaultChecked />
@@ -212,7 +234,7 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
                   {section.items.map((item) => (
                     <div
                       key={item.id}
-                      className="flex justify-between items-center p-3 border rounded hover:bg-gray-50"
+                      className="flex flex-col gap-3 p-3 border rounded hover:bg-gray-50 sm:flex-row sm:justify-between sm:items-center"
                     >
                       <div>
                         <div className="flex items-center gap-2">
@@ -227,7 +249,24 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
                           <p className="text-sm text-gray-500">{item.description}</p>
                         )}
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <form action={handleUpdateItemPhoto.bind(null, item.id)} className="flex flex-wrap items-center gap-2">
+                          <input
+                            type="file"
+                            name="image"
+                            accept="image/jpeg,image/png,image/webp"
+                            required
+                            aria-label={`Photo for ${item.name}`}
+                            className="max-w-40 text-xs file:rounded file:border-0 file:bg-gray-200 file:px-2 file:py-1 file:text-gray-700"
+                          />
+                          <button
+                            type="submit"
+                            disabled={isPending}
+                            className="text-blue-600 hover:text-blue-800 text-xs disabled:opacity-50"
+                          >
+                            {item.imageUrl ? 'Replace photo' : 'Add photo'}
+                          </button>
+                        </form>
                         <span className="font-semibold">${Number(item.price).toFixed(2)}</span>
                         <button
                           onClick={() => handleToggleAvailability(item.id, item.isAvailable)}

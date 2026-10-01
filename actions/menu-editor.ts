@@ -4,6 +4,7 @@
 import { prisma } from '@/lib/prisma'
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { randomUUID } from 'node:crypto'
 import { z } from 'zod'
 
 // Validation schemas
@@ -159,12 +160,68 @@ export async function createItem(formData: FormData) {
     return { error: parsed.error.issues[0].message }
   }
 
+  const imageValue = formData.get('image')
+  if (imageValue !== null && typeof imageValue !== 'string' && !(imageValue instanceof File)) {
+    return { error: 'Invalid image file' }
+  }
+
+  const imageFile = imageValue instanceof File && imageValue.size > 0 ? imageValue : null
+  const imageExtensions: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+  }
+
+  if (imageFile && !imageExtensions[imageFile.type]) {
+    return { error: 'Image must be a JPEG, PNG, or WebP file' }
+  }
+  if (imageFile && imageFile.size > 5 * 1024 * 1024) {
+    return { error: 'Image must be 5 MB or smaller' }
+  }
+
+  let uploadedImagePath: string | null = null
   try {
+    const ownerConditions = [
+      { id: user.id },
+      ...(user.email ? [{ email: user.email.toLowerCase() }] : []),
+    ]
+    const section = await prisma.menuSection.findFirst({
+      where: {
+        id: parsed.data.sectionId,
+        restaurant: { is: { OR: ownerConditions } },
+      },
+      select: { restaurant: { select: { slug: true } } },
+    })
+
+    if (!section) {
+      return { error: 'Menu section not found' }
+    }
+
+    let imageUrl: string | null = null
+    if (imageFile) {
+      const extension = imageExtensions[imageFile.type]
+      uploadedImagePath = `${user.id}/${randomUUID()}.${extension}`
+      const { error: uploadError } = await supabase.storage
+        .from('menu-item-images')
+        .upload(uploadedImagePath, await imageFile.arrayBuffer(), {
+          contentType: imageFile.type,
+          cacheControl: '3600',
+          upsert: false,
+        })
+
+      if (uploadError) {
+        console.error('Supabase Storage upload failed:', uploadError)
+        return { error: `Image upload failed: ${uploadError.message}` }
+      }
+      imageUrl = supabase.storage.from('menu-item-images').getPublicUrl(uploadedImagePath).data.publicUrl
+    }
+
     await prisma.menuItem.create({
       data: {
         name: parsed.data.name,
         description: parsed.data.description,
         price: parsed.data.price,
+        imageUrl,
         sectionId: parsed.data.sectionId,
         isAvailable: parsed.data.isAvailable,
         displayOrder: 0,
@@ -172,10 +229,100 @@ export async function createItem(formData: FormData) {
     })
 
     revalidatePath(`/dashboard`)
+    revalidatePath(`/${section.restaurant.slug}`)
     return { success: true }
   } catch (error) {
+    if (uploadedImagePath) {
+      await supabase.storage.from('menu-item-images').remove([uploadedImagePath])
+    }
     console.error('Error creating item:', error)
     return { error: 'Failed to create item' }
+  }
+}
+
+export async function updateItemPhoto(itemId: string, formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { error: 'Unauthorized' }
+  }
+
+  const imageValue = formData.get('image')
+  if (!(imageValue instanceof File) || imageValue.size === 0) {
+    return { error: 'Choose an image to upload' }
+  }
+
+  const imageExtensions: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+  }
+  if (!imageExtensions[imageValue.type]) {
+    return { error: 'Image must be a JPEG, PNG, or WebP file' }
+  }
+  if (imageValue.size > 5 * 1024 * 1024) {
+    return { error: 'Image must be 5 MB or smaller' }
+  }
+
+  let uploadedImagePath: string | null = null
+  try {
+    const ownerConditions = [
+      { id: user.id },
+      ...(user.email ? [{ email: user.email.toLowerCase() }] : []),
+    ]
+    const item = await prisma.menuItem.findFirst({
+      where: {
+        id: itemId,
+        section: {
+          is: { restaurant: { is: { OR: ownerConditions } } },
+        },
+      },
+      select: {
+        imageUrl: true,
+        section: { select: { restaurant: { select: { slug: true } } } },
+      },
+    })
+
+    if (!item) {
+      return { error: 'Menu item not found' }
+    }
+
+    const extension = imageExtensions[imageValue.type]
+    uploadedImagePath = `${user.id}/${randomUUID()}.${extension}`
+    const { error: uploadError } = await supabase.storage
+      .from('menu-item-images')
+      .upload(uploadedImagePath, await imageValue.arrayBuffer(), {
+        contentType: imageValue.type,
+        cacheControl: '3600',
+        upsert: false,
+      })
+
+    if (uploadError) {
+      console.error('Supabase Storage upload failed:', uploadError)
+      return { error: `Image upload failed: ${uploadError.message}` }
+    }
+
+    const imageUrl = supabase.storage.from('menu-item-images').getPublicUrl(uploadedImagePath).data.publicUrl
+    await prisma.menuItem.update({ where: { id: itemId }, data: { imageUrl } })
+
+    if (item.imageUrl) {
+      const publicUrlPrefix = supabase.storage.from('menu-item-images').getPublicUrl('').data.publicUrl
+      if (item.imageUrl.startsWith(publicUrlPrefix)) {
+        const oldImagePath = decodeURIComponent(item.imageUrl.slice(publicUrlPrefix.length))
+        await supabase.storage.from('menu-item-images').remove([oldImagePath])
+      }
+    }
+
+    revalidatePath('/dashboard')
+    revalidatePath(`/${item.section.restaurant.slug}`)
+    return { success: true }
+  } catch (error) {
+    if (uploadedImagePath) {
+      await supabase.storage.from('menu-item-images').remove([uploadedImagePath])
+    }
+    console.error('Error updating item photo:', error)
+    return { error: 'Failed to update item photo' }
   }
 }
 
