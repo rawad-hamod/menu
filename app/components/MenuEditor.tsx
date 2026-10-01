@@ -10,6 +10,7 @@ import {
   deleteItem,
   toggleItemAvailability,
   updateItemPhoto,
+  updateRestaurantProfile,
 } from '@/actions/menu-editor'
 
 type Section = {
@@ -52,6 +53,18 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
         setError(result.error)
       } else {
         // Refresh the page to show new section
+        window.location.reload()
+      }
+    })
+  }
+
+  const handleUpdateRestaurantProfile = async (formData: FormData) => {
+    setError(null)
+    startTransition(async () => {
+      const result = await updateRestaurantProfile(formData)
+      if (result.error) {
+        setError(result.error)
+      } else {
         window.location.reload()
       }
     })
@@ -132,6 +145,47 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
           {error}
         </div>
       )}
+
+      <section className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-lg font-semibold mb-4">Restaurant profile</h2>
+        <form action={handleUpdateRestaurantProfile} className="grid gap-4 sm:grid-cols-2">
+          <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
+            Description
+            <textarea
+              name="description"
+              defaultValue={restaurant.description ?? ''}
+              maxLength={500}
+              rows={4}
+              placeholder="Tell customers about your restaurant"
+              className="w-full resize-y rounded-md border border-gray-300 px-3 py-2 font-normal focus:border-blue-500 focus:ring-blue-500"
+            />
+          </label>
+          <div className="flex flex-col gap-3">
+            <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
+              Restaurant logo (optional, JPEG, PNG, or WebP; max 5 MB)
+              <input
+                type="file"
+                name="logo"
+                accept="image/jpeg,image/png,image/webp"
+                className="w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-gray-200 file:px-3 file:py-2 file:text-gray-700 hover:file:bg-gray-300"
+              />
+            </label>
+            {restaurant.logoUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={restaurant.logoUrl} alt="Current restaurant logo" className="h-20 w-20 rounded-full border object-cover" />
+            )}
+          </div>
+          <div className="sm:col-span-2">
+            <button
+              type="submit"
+              disabled={isPending}
+              className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white transition hover:bg-blue-700 disabled:opacity-50"
+            >
+              Save restaurant profile
+            </button>
+          </div>
+        </form>
+      </section>
 
       {/* Add Section */}
       <div className="bg-white rounded-lg shadow p-6">

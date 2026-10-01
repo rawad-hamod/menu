@@ -65,14 +65,19 @@ export default async function PublicMenuPage({ params }: PageProps) {
                           !item.isAvailable ? 'opacity-50' : ''
                         }`}
                       >
-                        {item.imageUrl && (
+                        {item.imageUrl || restaurant.logoUrl ? (
                           <div className="w-24 h-24 relative shrink-0">
                             <Image
-                              src={item.imageUrl}
-                              alt={item.name}
+                              src={item.imageUrl || restaurant.logoUrl!}
+                              alt={item.imageUrl ? item.name : `${restaurant.name} logo`}
                               fill
+                              sizes="96px"
                               className="object-cover rounded-md"
                             />
+                          </div>
+                        ) : (
+                          <div className="w-24 h-24 shrink-0 rounded-md bg-gray-100 flex items-center justify-center text-xs text-gray-500">
+                            No image
                           </div>
                         )}
                         <div className="flex-1">

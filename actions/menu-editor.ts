@@ -21,6 +21,10 @@ const itemSchema = z.object({
   isAvailable: z.boolean().default(true),
 })
 
+const restaurantProfileSchema = z.object({
+  description: z.string().max(500, 'Description must be 500 characters or fewer'),
+})
+
 // Get all sections and items for a restaurant
 export async function getRestaurantMenu() {
   const supabase = await createClient()
@@ -67,6 +71,101 @@ export async function getRestaurantMenu() {
         price: Number(item.price),
       })),
     })),
+  }
+}
+
+export async function updateRestaurantProfile(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user?.email) {
+    return { error: 'Unauthorized' }
+  }
+
+  const parsed = restaurantProfileSchema.safeParse({
+    description: formData.get('description'),
+  })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message }
+  }
+
+  const imageValue = formData.get('logo')
+  if (imageValue !== null && typeof imageValue !== 'string' && !(imageValue instanceof File)) {
+    return { error: 'Invalid logo file' }
+  }
+
+  const logoFile = imageValue instanceof File && imageValue.size > 0 ? imageValue : null
+  const imageExtensions: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+  }
+
+  if (logoFile && !imageExtensions[logoFile.type]) {
+    return { error: 'Logo must be a JPEG, PNG, or WebP file' }
+  }
+  if (logoFile && logoFile.size > 5 * 1024 * 1024) {
+    return { error: 'Logo must be 5 MB or smaller' }
+  }
+
+  let uploadedLogoPath: string | null = null
+  try {
+    const restaurant = await prisma.restaurant.findFirst({
+      where: {
+        OR: [
+          { id: user.id },
+          { email: user.email.toLowerCase() },
+        ],
+      },
+      select: { id: true, slug: true, logoUrl: true },
+    })
+
+    if (!restaurant) {
+      return { error: 'Restaurant not found' }
+    }
+
+    let logoUrl = restaurant.logoUrl
+    if (logoFile) {
+      const extension = imageExtensions[logoFile.type]
+      uploadedLogoPath = `${user.id}/${randomUUID()}.${extension}`
+      const { error: uploadError } = await supabase.storage
+        .from('menu-item-images')
+        .upload(uploadedLogoPath, await logoFile.arrayBuffer(), {
+          contentType: logoFile.type,
+          cacheControl: '3600',
+          upsert: false,
+        })
+
+      if (uploadError) {
+        console.error('Supabase Storage logo upload failed:', uploadError)
+        return { error: `Logo upload failed: ${uploadError.message}` }
+      }
+
+      logoUrl = supabase.storage.from('menu-item-images').getPublicUrl(uploadedLogoPath).data.publicUrl
+    }
+
+    await prisma.restaurant.update({
+      where: { id: restaurant.id },
+      data: { description: parsed.data.description || null, logoUrl },
+    })
+
+    if (logoFile && restaurant.logoUrl) {
+      const publicUrlPrefix = supabase.storage.from('menu-item-images').getPublicUrl('').data.publicUrl
+      if (restaurant.logoUrl.startsWith(publicUrlPrefix)) {
+        const oldLogoPath = decodeURIComponent(restaurant.logoUrl.slice(publicUrlPrefix.length))
+        await supabase.storage.from('menu-item-images').remove([oldLogoPath])
+      }
+    }
+
+    revalidatePath('/dashboard')
+    revalidatePath(`/${restaurant.slug}`)
+    return { success: true }
+  } catch (error) {
+    if (uploadedLogoPath) {
+      await supabase.storage.from('menu-item-images').remove([uploadedLogoPath])
+    }
+    console.error('Error updating restaurant profile:', error)
+    return { error: 'Failed to update restaurant profile' }
   }
 }
 
