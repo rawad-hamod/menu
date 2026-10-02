@@ -1,15 +1,18 @@
 import { getPublicMenu } from '@/actions/menu'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 
 interface PageProps {
   params: { slug: string } | Promise<{ slug: string }>
+  searchParams: Promise<{ category?: string }>
 }
 
-export default async function PublicMenuPage({ params }: PageProps) {
+export default async function PublicMenuPage({ params, searchParams }: PageProps) {
   const { slug } = (await params) as { slug: string }
+  const { category } = await searchParams
   const normalizedSlug = slug.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-  const restaurant = await getPublicMenu(normalizedSlug)
+  const restaurant = await getPublicMenu(normalizedSlug, category)
 
   if (!restaurant) {
     notFound()
@@ -48,17 +51,34 @@ export default async function PublicMenuPage({ params }: PageProps) {
             This restaurant has not added any menu items yet.
           </p>
         ) : (
-          <div className="space-y-12">
-            {restaurant.sections.map((section) => (
-              <div key={section.id}>
-                <h2 className="text-2xl font-semibold mb-4 border-b pb-2">
+          <div>
+            <nav aria-label="Menu categories" className="mb-8 flex gap-2 overflow-x-auto border-b">
+              {restaurant.sections.map((section) => (
+                <Link
+                  key={section.id}
+                  href={`/${normalizedSlug}?category=${encodeURIComponent(section.id)}`}
+                  aria-current={restaurant.selectedSection?.id === section.id ? 'page' : undefined}
+                  className={`shrink-0 border-b-2 px-4 py-3 text-sm font-medium transition ${
+                    restaurant.selectedSection?.id === section.id
+                      ? 'border-blue-600 text-blue-700'
+                      : 'border-transparent text-gray-600 hover:text-gray-900'
+                  }`}
+                >
                   {section.name}
+                </Link>
+              ))}
+            </nav>
+
+            {restaurant.selectedSection && (
+              <section key={restaurant.selectedSection.id}>
+                <h2 className="text-2xl font-semibold mb-4 border-b pb-2">
+                  {restaurant.selectedSection.name}
                 </h2>
                 <div className="grid gap-4">
-                  {section.items.length === 0 ? (
+                  {restaurant.selectedSection.items.length === 0 ? (
                     <p className="text-gray-400 text-sm">No items in this section</p>
                   ) : (
-                    section.items.map((item) => (
+                    restaurant.selectedSection.items.map((item) => (
                       <div
                         key={item.id}
                         className={`flex gap-4 p-4 bg-white rounded-lg shadow-sm border ${
@@ -106,8 +126,8 @@ export default async function PublicMenuPage({ params }: PageProps) {
                     ))
                   )}
                 </div>
-              </div>
-            ))}
+              </section>
+            )}
           </div>
         )}
       </div>
