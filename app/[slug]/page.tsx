@@ -2,6 +2,7 @@ import { getPublicMenu } from '@/actions/menu'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
+import MenuItemCard from './components/MenuItemCard'
 
 interface PageProps {
   params: { slug: string } | Promise<{ slug: string }>
@@ -20,7 +21,7 @@ export default async function PublicMenuPage({ params, searchParams }: PageProps
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="sticky top-0 z-30 border-b border-gray-200 bg-white shadow-sm">
+      <header className="border-b border-gray-200 bg-white shadow-sm">
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
           <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-center sm:gap-6 sm:text-left">
             {restaurant.logoUrl && (
@@ -44,30 +45,31 @@ export default async function PublicMenuPage({ params, searchParams }: PageProps
             </div>
           </div>
         </div>
-        {restaurant.sections.length > 0 && (
-          <nav
-            aria-label="Menu categories"
-            className="overflow-x-auto overscroll-x-contain border-t border-gray-100"
-          >
-            <div className="mx-auto flex w-max min-w-full justify-center gap-2 px-4 sm:px-6">
-              {restaurant.sections.map((section) => (
-                <Link
-                  key={section.id}
-                  href={`/${normalizedSlug}?category=${encodeURIComponent(section.id)}`}
-                  aria-current={restaurant.selectedSection?.id === section.id ? 'page' : undefined}
-                  className={`shrink-0 border-b-2 px-4 py-3 text-sm font-semibold transition-colors ${
-                    restaurant.selectedSection?.id === section.id
-                      ? 'border-amber-600 text-amber-800'
-                      : 'border-transparent text-gray-600 hover:border-gray-300 hover:text-gray-900'
-                  }`}
-                >
-                  {section.name}
-                </Link>
-              ))}
-            </div>
-          </nav>
-        )}
       </header>
+
+      {restaurant.sections.length > 0 && (
+        <nav
+          aria-label="Menu categories"
+          className="sticky top-0 z-30 overflow-x-auto overscroll-x-contain border-b border-gray-200 bg-white shadow-sm"
+        >
+          <div className="mx-auto flex w-max min-w-full justify-center gap-2 px-4 sm:px-6">
+            {restaurant.sections.map((section) => (
+              <Link
+                key={section.id}
+                href={`/${normalizedSlug}?category=${encodeURIComponent(section.id)}`}
+                aria-current={restaurant.selectedSection?.id === section.id ? 'page' : undefined}
+                className={`shrink-0 border-b-2 px-4 py-3 text-sm font-semibold transition-colors ${
+                  restaurant.selectedSection?.id === section.id
+                    ? 'border-amber-600 text-amber-800'
+                    : 'border-transparent text-gray-600 hover:border-gray-300 hover:text-gray-900'
+                }`}
+              >
+                {section.name}
+              </Link>
+            ))}
+          </div>
+        </nav>
+      )}
 
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
         {restaurant.sections.length === 0 ? (
@@ -88,48 +90,16 @@ export default async function PublicMenuPage({ params, searchParams }: PageProps
                     </p>
                   ) : (
                     restaurant.selectedSection.items.map((item) => (
-                      <article
+                      <MenuItemCard
                         key={item.id}
-                        className={`overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md ${
-                          !item.isAvailable ? 'opacity-60' : ''
-                        }`}
-                      >
-                        {item.imageUrl || restaurant.logoUrl ? (
-                          <div className="relative aspect-[4/3] w-full bg-gray-100">
-                            <Image
-                              src={item.imageUrl || restaurant.logoUrl!}
-                              alt={item.imageUrl ? item.name : `${restaurant.name} logo`}
-                              fill
-                              sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 25vw"
-                              className="object-cover"
-                            />
-                          </div>
-                        ) : (
-                          <div className="flex aspect-[4/3] w-full items-center justify-center bg-gray-100 text-sm text-gray-400">
-                            No image available
-                          </div>
-                        )}
-                        <div className="p-3 sm:p-4">
-                          <div className="flex items-start justify-between gap-2">
-                            <h3 className="min-w-0 text-sm font-semibold text-gray-900 sm:text-base">
-                              {item.name}
-                            </h3>
-                            <span className="shrink-0 text-sm font-semibold text-amber-800 sm:text-base">
-                              ${Number(item.price).toFixed(2)}
-                            </span>
-                          </div>
-                          {!item.isAvailable && (
-                            <span className="mt-1 inline-block text-xs font-medium text-red-600">
-                              Sold Out
-                            </span>
-                          )}
-                          {item.description && (
-                            <p className="mt-2 text-xs leading-relaxed text-gray-600 sm:text-sm">
-                              {item.description}
-                            </p>
-                          )}
-                        </div>
-                      </article>
+                        name={item.name}
+                        price={`$${Number(item.price).toFixed(2)}`}
+                        description={item.description}
+                        imageUrl={item.imageUrl}
+                        isAvailable={item.isAvailable}
+                        restaurantName={restaurant.name}
+                        restaurantLogoUrl={restaurant.logoUrl}
+                      />
                     ))
                   )}
                 </div>
