@@ -361,18 +361,32 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
                         </form>
                       ) : (
                         <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className={`font-medium ${!item.isAvailable ? 'line-through text-gray-400' : ''}`}>
-                                {item.name}
-                              </span>
-                              {!item.isAvailable && (
-                                <span className="text-xs text-red-500 font-medium">{t('soldOut')}</span>
+                          <div className="flex items-center gap-3">
+                            {item.imageUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={item.imageUrl}
+                                alt={item.name}
+                                className="h-16 w-16 shrink-0 rounded-md border border-gray-200 object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md bg-gray-100 p-1 text-center text-[10px] text-gray-500">
+                                {t('noImageAvailable')}
+                              </div>
+                            )}
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className={`font-medium ${!item.isAvailable ? 'line-through text-gray-400' : ''}`}>
+                                  {item.name}
+                                </span>
+                                {!item.isAvailable && (
+                                  <span className="text-xs text-red-500 font-medium">{t('soldOut')}</span>
+                                )}
+                              </div>
+                              {item.description && (
+                                <p className="text-sm text-gray-500">{item.description}</p>
                               )}
                             </div>
-                            {item.description && (
-                              <p className="text-sm text-gray-500">{item.description}</p>
-                            )}
                           </div>
                           <div className="flex flex-wrap items-center gap-3">
                             <form action={handleUpdateItemPhoto.bind(null, item.id)} className="flex flex-wrap items-center gap-2">
