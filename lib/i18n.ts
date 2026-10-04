@@ -3,6 +3,8 @@ export type Locale = 'en' | 'ar'
 export const messages = {
   en: {
     language: 'العربية',
+    darkMode: 'Dark mode',
+    lightMode: 'Light mode',
     login: 'Login',
     createAccount: 'Create Account',
     restaurantName: 'Restaurant Name',
@@ -93,6 +95,8 @@ export const messages = {
   },
   ar: {
     language: 'English',
+    darkMode: 'الوضع الداكن',
+    lightMode: 'الوضع الفاتح',
     login: 'تسجيل الدخول',
     createAccount: 'إنشاء حساب',
     restaurantName: 'اسم المطعم',
