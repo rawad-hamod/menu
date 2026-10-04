@@ -21,6 +21,12 @@ const itemSchema = z.object({
   isAvailable: z.boolean().default(true),
 })
 
+const itemUpdateSchema = z.object({
+  name: z.string().trim().min(1, 'Item name is required'),
+  description: z.string().max(500, 'Description must be 500 characters or fewer'),
+  price: z.coerce.number().finite().positive('Price must be greater than 0'),
+})
+
 const restaurantProfileSchema = z.object({
   description: z.string().max(500, 'Description must be 500 characters or fewer'),
 })
@@ -339,6 +345,56 @@ export async function createItem(formData: FormData) {
   }
 }
 
+export async function updateItem(itemId: string, formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { error: 'Unauthorized' }
+  }
+
+  const parsed = itemUpdateSchema.safeParse({
+    name: formData.get('name'),
+    description: formData.get('description'),
+    price: formData.get('price'),
+  })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message }
+  }
+
+  try {
+    const ownerConditions = [
+      { id: user.id },
+      ...(user.email ? [{ email: user.email.toLowerCase() }] : []),
+    ]
+    const item = await prisma.menuItem.findFirst({
+      where: {
+        id: itemId,
+        section: {
+          is: { restaurant: { is: { OR: ownerConditions } } },
+        },
+      },
+      select: { section: { select: { restaurant: { select: { slug: true } } } } },
+    })
+
+    if (!item) {
+      return { error: 'Menu item not found' }
+    }
+
+    await prisma.menuItem.update({
+      where: { id: itemId },
+      data: parsed.data,
+    })
+
+    revalidatePath('/dashboard')
+    revalidatePath(`/${item.section.restaurant.slug}`)
+    return { success: true }
+  } catch (error) {
+    console.error('Error updating item:', error)
+    return { error: 'Failed to update item' }
+  }
+}
+
 export async function updateItemPhoto(itemId: string, formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -435,11 +491,48 @@ export async function deleteItem(itemId: string) {
   }
 
   try {
-    await prisma.menuItem.delete({
-      where: { id: itemId }
+    const ownerConditions = [
+      { id: user.id },
+      ...(user.email ? [{ email: user.email.toLowerCase() }] : []),
+    ]
+    const item = await prisma.menuItem.findFirst({
+      where: {
+        id: itemId,
+        section: {
+          is: { restaurant: { is: { OR: ownerConditions } } },
+        },
+      },
+      select: {
+        imageUrl: true,
+        section: { select: { restaurant: { select: { slug: true } } } },
+      },
     })
 
-    revalidatePath(`/dashboard`)
+    if (!item) {
+      return { error: 'Menu item not found' }
+    }
+
+    await prisma.menuItem.delete({
+      where: { id: itemId },
+    })
+
+    if (item.imageUrl) {
+      try {
+        const publicUrlPrefix = supabase.storage.from('menu-item-images').getPublicUrl('').data.publicUrl
+        if (item.imageUrl.startsWith(publicUrlPrefix)) {
+          const imagePath = decodeURIComponent(item.imageUrl.slice(publicUrlPrefix.length))
+          const { error: removeError } = await supabase.storage.from('menu-item-images').remove([imagePath])
+          if (removeError) {
+            console.error('Supabase Storage item image cleanup failed:', removeError)
+          }
+        }
+      } catch (error) {
+        console.error('Supabase Storage item image cleanup failed:', error)
+      }
+    }
+
+    revalidatePath('/dashboard')
+    revalidatePath(`/${item.section.restaurant.slug}`)
     return { success: true }
   } catch (error) {
     console.error('Error deleting item:', error)
@@ -449,7 +542,7 @@ export async function deleteItem(itemId: string) {
 
 // Toggle item availability
 export async function toggleItemAvailability(itemId: string, isAvailable: boolean) {
-  const supabase =await createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -457,12 +550,31 @@ export async function toggleItemAvailability(itemId: string, isAvailable: boolea
   }
 
   try {
+    const ownerConditions = [
+      { id: user.id },
+      ...(user.email ? [{ email: user.email.toLowerCase() }] : []),
+    ]
+    const item = await prisma.menuItem.findFirst({
+      where: {
+        id: itemId,
+        section: {
+          is: { restaurant: { is: { OR: ownerConditions } } },
+        },
+      },
+      select: { section: { select: { restaurant: { select: { slug: true } } } } },
+    })
+
+    if (!item) {
+      return { error: 'Menu item not found' }
+    }
+
     await prisma.menuItem.update({
       where: { id: itemId },
       data: { isAvailable }
     })
 
     revalidatePath(`/dashboard`)
+    revalidatePath(`/${item.section.restaurant.slug}`)
     return { success: true }
   } catch (error) {
     console.error('Error toggling item:', error)

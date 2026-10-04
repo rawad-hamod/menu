@@ -8,6 +8,7 @@ import {
   deleteSection,
   createItem,
   deleteItem,
+  updateItem,
   toggleItemAvailability,
   updateItemPhoto,
   updateRestaurantProfile,
@@ -46,6 +47,7 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
   const [sections] = useState(restaurant.sections)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const [editingItemId, setEditingItemId] = useState<string | null>(null)
 
   // Add section handler
   const handleAddSection = async (formData: FormData) => {
@@ -108,6 +110,18 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
     setError(null)
     startTransition(async () => {
       const result = await deleteItem(itemId)
+      if (result.error) {
+        setError(translateError(locale, result.error))
+      } else {
+        window.location.reload()
+      }
+    })
+  }
+
+  const handleUpdateItem = async (itemId: string, formData: FormData) => {
+    setError(null)
+    startTransition(async () => {
+      const result = await updateItem(itemId, formData)
       if (result.error) {
         setError(translateError(locale, result.error))
       } else {
@@ -293,59 +307,122 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
                   {section.items.map((item) => (
                     <div
                       key={item.id}
-                      className="flex flex-col gap-3 p-3 border rounded hover:bg-gray-50 sm:flex-row sm:justify-between sm:items-center"
+                      className="flex flex-col gap-3 p-3 border rounded hover:bg-gray-50"
                     >
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className={`font-medium ${!item.isAvailable ? 'line-through text-gray-400' : ''}`}>
-                            {item.name}
-                          </span>
-                          {!item.isAvailable && (
-                            <span className="text-xs text-red-500 font-medium">{t('soldOut')}</span>
-                          )}
-                        </div>
-                        {item.description && (
-                          <p className="text-sm text-gray-500">{item.description}</p>
-                        )}
-                      </div>
-                      <div className="flex flex-wrap items-center gap-3">
-                        <form action={handleUpdateItemPhoto.bind(null, item.id)} className="flex flex-wrap items-center gap-2">
+                      {editingItemId === item.id ? (
+                        <form
+                          action={handleUpdateItem.bind(null, item.id)}
+                          className="grid grid-cols-1 gap-3 md:grid-cols-4"
+                        >
                           <input
-                            type="file"
-                            name="image"
-                            accept="image/jpeg,image/png,image/webp"
+                            type="text"
+                            name="name"
+                            defaultValue={item.name}
+                            placeholder={t('itemNamePlaceholder')}
+                            aria-label={t('itemName')}
                             required
-                            aria-label={`${t('photoFor')} ${item.name}`}
-                            className="max-w-40 text-xs file:rounded file:border-0 file:bg-gray-200 file:px-2 file:py-1 file:text-gray-700"
+                            className="border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                           />
-                          <button
-                            type="submit"
-                            disabled={isPending}
-                            className="text-blue-600 hover:text-blue-800 text-xs disabled:opacity-50"
-                          >
-                            {item.imageUrl ? t('replacePhoto') : t('addPhoto')}
-                          </button>
+                          <input
+                            type="text"
+                            name="description"
+                            defaultValue={item.description ?? ''}
+                            placeholder={t('itemDescriptionPlaceholder')}
+                            className="border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                          <input
+                            type="number"
+                            name="price"
+                            defaultValue={Number(item.price).toFixed(2)}
+                            placeholder={t('price')}
+                            aria-label={t('price')}
+                            min="0.01"
+                            step="0.01"
+                            required
+                            className="border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                          <div className="flex flex-wrap items-center gap-3">
+                            <button
+                              type="submit"
+                              disabled={isPending}
+                              className="rounded-md bg-blue-600 px-3 py-2 text-sm text-white transition hover:bg-blue-700 disabled:opacity-50"
+                            >
+                              {t('saveChanges')}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isPending}
+                              onClick={() => setEditingItemId(null)}
+                              className="text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50"
+                            >
+                              {t('cancel')}
+                            </button>
+                          </div>
                         </form>
-                        <span className="font-semibold">${Number(item.price).toFixed(2)}</span>
-                        <button
-                          onClick={() => handleToggleAvailability(item.id, item.isAvailable)}
-                          disabled={isPending}
-                          className={`px-2 py-1 rounded text-xs transition ${
-                            item.isAvailable
-                              ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                              : 'bg-green-100 text-green-700 hover:bg-green-200'
-                          } disabled:opacity-50`}
-                        >
-                          {item.isAvailable ? t('markSoldOut') : t('markAvailable')}
-                        </button>
-                        <button
-                          onClick={() => handleDeleteItem(item.id)}
-                          disabled={isPending}
-                          className="text-red-500 hover:text-red-700 text-sm disabled:opacity-50"
-                        >
-                          ×
-                        </button>
-                      </div>
+                      ) : (
+                        <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className={`font-medium ${!item.isAvailable ? 'line-through text-gray-400' : ''}`}>
+                                {item.name}
+                              </span>
+                              {!item.isAvailable && (
+                                <span className="text-xs text-red-500 font-medium">{t('soldOut')}</span>
+                              )}
+                            </div>
+                            {item.description && (
+                              <p className="text-sm text-gray-500">{item.description}</p>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap items-center gap-3">
+                            <form action={handleUpdateItemPhoto.bind(null, item.id)} className="flex flex-wrap items-center gap-2">
+                              <input
+                                type="file"
+                                name="image"
+                                accept="image/jpeg,image/png,image/webp"
+                                required
+                                aria-label={`${t('photoFor')} ${item.name}`}
+                                className="max-w-40 text-xs file:rounded file:border-0 file:bg-gray-200 file:px-2 file:py-1 file:text-gray-700"
+                              />
+                              <button
+                                type="submit"
+                                disabled={isPending}
+                                className="text-blue-600 hover:text-blue-800 text-xs disabled:opacity-50"
+                              >
+                                {item.imageUrl ? t('replacePhoto') : t('addPhoto')}
+                              </button>
+                            </form>
+                            <span className="font-semibold">${Number(item.price).toFixed(2)}</span>
+                            <button
+                              onClick={() => handleToggleAvailability(item.id, item.isAvailable)}
+                              disabled={isPending}
+                              className={`px-2 py-1 rounded text-xs transition ${
+                                item.isAvailable
+                                  ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                                  : 'bg-green-100 text-green-700 hover:bg-green-200'
+                              } disabled:opacity-50`}
+                            >
+                              {item.isAvailable ? t('markSoldOut') : t('markAvailable')}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingItemId(item.id)}
+                              disabled={isPending}
+                              className="text-blue-600 hover:text-blue-800 text-sm disabled:opacity-50"
+                            >
+                              {t('editItem')}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteItem(item.id)}
+                              disabled={isPending}
+                              className="text-red-500 hover:text-red-700 text-sm disabled:opacity-50"
+                            >
+                              {t('deleteItem')}
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
