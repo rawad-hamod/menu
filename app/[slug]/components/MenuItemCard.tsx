@@ -8,6 +8,10 @@ interface MenuItemCardProps {
   isAvailable: boolean
   restaurantName: string
   restaurantLogoUrl: string | null
+  translations: {
+    noImageAvailable: string
+    soldOut: string
+  }
 }
 
 export default function MenuItemCard({
@@ -18,6 +22,7 @@ export default function MenuItemCard({
   isAvailable,
   restaurantName,
   restaurantLogoUrl,
+  translations,
 }: MenuItemCardProps) {
   const cardImage = imageUrl || restaurantLogoUrl
 
@@ -39,7 +44,7 @@ export default function MenuItemCard({
         </div>
       ) : (
         <div className="flex aspect-[4/3] w-full items-center justify-center bg-gray-100 text-sm text-gray-400">
-          No image available
+          {translations.noImageAvailable}
         </div>
       )}
       <div className="p-3 sm:p-4">
@@ -48,7 +53,7 @@ export default function MenuItemCard({
           <span className="shrink-0 text-sm font-semibold text-amber-800 sm:text-base">{price}</span>
         </div>
         {!isAvailable && (
-          <span className="mt-1 inline-block text-xs font-medium text-red-600">Sold Out</span>
+          <span className="mt-1 inline-block text-xs font-medium text-red-600">{translations.soldOut}</span>
         )}
         {description && (
           <p className="mt-2 text-xs leading-relaxed text-gray-600 sm:text-sm">{description}</p>

@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import MenuItemCard from './components/MenuItemCard'
+import { getLocale } from '@/lib/locale-server'
+import { translate } from '@/lib/i18n'
 
 interface PageProps {
   params: { slug: string } | Promise<{ slug: string }>
@@ -12,6 +14,8 @@ interface PageProps {
 export default async function PublicMenuPage({ params, searchParams }: PageProps) {
   const { slug } = (await params) as { slug: string }
   const { category } = await searchParams
+  const locale = await getLocale()
+  const t = (key: Parameters<typeof translate>[1]) => translate(locale, key)
   const normalizedSlug = slug.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
   const restaurant = await getPublicMenu(normalizedSlug, category)
 
@@ -23,7 +27,7 @@ export default async function PublicMenuPage({ params, searchParams }: PageProps
     <div className="min-h-screen bg-gray-50">
       <header className="border-b border-gray-200 bg-white shadow-sm">
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
-          <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-center sm:gap-6 sm:text-left">
+          <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-center sm:gap-6 sm:text-start">
             {restaurant.logoUrl && (
               <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-full ring-4 ring-amber-50">
                 <Image
@@ -49,7 +53,7 @@ export default async function PublicMenuPage({ params, searchParams }: PageProps
 
       {restaurant.sections.length > 0 && (
         <nav
-          aria-label="Menu categories"
+          aria-label={t('menuCategories')}
           className="sticky top-0 z-30 overflow-x-auto overscroll-x-contain border-b border-gray-200 bg-white shadow-sm"
         >
           <div className="mx-auto flex w-max min-w-full justify-center gap-2 px-4 sm:px-6">
@@ -74,7 +78,7 @@ export default async function PublicMenuPage({ params, searchParams }: PageProps
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
         {restaurant.sections.length === 0 ? (
           <p className="text-center text-gray-500 py-12">
-            This restaurant has not added any menu items yet.
+            {t('noMenuItems')}
           </p>
         ) : (
           <div>
@@ -86,7 +90,7 @@ export default async function PublicMenuPage({ params, searchParams }: PageProps
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
                   {restaurant.selectedSection.items.length === 0 ? (
                     <p className="col-span-full rounded-lg border border-dashed border-gray-300 bg-white px-4 py-8 text-center text-sm text-gray-500">
-                      No items in this section
+                      {t('noItemsInSection')}
                     </p>
                   ) : (
                     restaurant.selectedSection.items.map((item) => (
@@ -99,6 +103,10 @@ export default async function PublicMenuPage({ params, searchParams }: PageProps
                         isAvailable={item.isAvailable}
                         restaurantName={restaurant.name}
                         restaurantLogoUrl={restaurant.logoUrl}
+                        translations={{
+                          noImageAvailable: t('noImageAvailable'),
+                          soldOut: t('soldOut'),
+                        }}
                       />
                     ))
                   )}

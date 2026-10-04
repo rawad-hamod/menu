@@ -12,6 +12,8 @@ import {
   updateItemPhoto,
   updateRestaurantProfile,
 } from '@/actions/menu-editor'
+import { useLocale } from './LocaleProvider'
+import { translateError } from '@/lib/i18n'
 
 type Section = {
   id: string
@@ -40,6 +42,7 @@ interface MenuEditorProps {
 }
 
 export default function MenuEditor({ restaurant }: MenuEditorProps) {
+  const { locale, t } = useLocale()
   const [sections] = useState(restaurant.sections)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -50,7 +53,7 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
     startTransition(async () => {
       const result = await createSection(formData)
       if (result.error) {
-        setError(result.error)
+        setError(translateError(locale, result.error))
       } else {
         // Refresh the page to show new section
         window.location.reload()
@@ -63,7 +66,7 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
     startTransition(async () => {
       const result = await updateRestaurantProfile(formData)
       if (result.error) {
-        setError(result.error)
+        setError(translateError(locale, result.error))
       } else {
         window.location.reload()
       }
@@ -72,13 +75,13 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
 
   // Delete section handler
   const handleDeleteSection = async (sectionId: string) => {
-    if (!confirm('Delete this section and all its items?')) return
+    if (!confirm(t('deleteSectionConfirm'))) return
     
     setError(null)
     startTransition(async () => {
       const result = await deleteSection(sectionId)
       if (result.error) {
-        setError(result.error)
+        setError(translateError(locale, result.error))
       } else {
         window.location.reload()
       }
@@ -91,7 +94,7 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
     startTransition(async () => {
       const result = await createItem(formData)
       if (result.error) {
-        setError(result.error)
+        setError(translateError(locale, result.error))
       } else {
         window.location.reload()
       }
@@ -100,13 +103,13 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
 
   // Delete item handler
   const handleDeleteItem = async (itemId: string) => {
-    if (!confirm('Delete this item?')) return
+    if (!confirm(t('deleteItemConfirm'))) return
     
     setError(null)
     startTransition(async () => {
       const result = await deleteItem(itemId)
       if (result.error) {
-        setError(result.error)
+        setError(translateError(locale, result.error))
       } else {
         window.location.reload()
       }
@@ -118,7 +121,7 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
     startTransition(async () => {
       const result = await updateItemPhoto(itemId, formData)
       if (result.error) {
-        setError(result.error)
+        setError(translateError(locale, result.error))
       } else {
         window.location.reload()
       }
@@ -131,7 +134,7 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
     startTransition(async () => {
       const result = await toggleItemAvailability(itemId, !currentStatus)
       if (result.error) {
-        setError(result.error)
+        setError(translateError(locale, result.error))
       } else {
         window.location.reload()
       }
@@ -147,22 +150,22 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
       )}
 
       <section className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold mb-4">Restaurant profile</h2>
+        <h2 className="text-lg font-semibold mb-4">{t('restaurantProfile')}</h2>
         <form action={handleUpdateRestaurantProfile} className="grid gap-4 sm:grid-cols-2">
           <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
-            Description
+            {t('description')}
             <textarea
               name="description"
               defaultValue={restaurant.description ?? ''}
               maxLength={500}
               rows={4}
-              placeholder="Tell customers about your restaurant"
+              placeholder={t('restaurantDescriptionPlaceholder')}
               className="w-full resize-y rounded-md border border-gray-300 px-3 py-2 font-normal focus:border-blue-500 focus:ring-blue-500"
             />
           </label>
           <div className="flex flex-col gap-3">
             <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
-              Restaurant logo (optional, JPEG, PNG, or WebP; max 5 MB)
+              {t('restaurantLogo')}
               <input
                 type="file"
                 name="logo"
@@ -172,7 +175,7 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
             </label>
             {restaurant.logoUrl && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={restaurant.logoUrl} alt="Current restaurant logo" className="h-20 w-20 rounded-full border object-cover" />
+              <img src={restaurant.logoUrl} alt={t('currentRestaurantLogo')} className="h-20 w-20 rounded-full border object-cover" />
             )}
           </div>
           <div className="sm:col-span-2">
@@ -181,7 +184,7 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
               disabled={isPending}
               className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white transition hover:bg-blue-700 disabled:opacity-50"
             >
-              Save restaurant profile
+              {t('saveRestaurantProfile')}
             </button>
           </div>
         </form>
@@ -189,13 +192,14 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
 
       {/* Add Section */}
       <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold mb-4">Add Section</h2>
+        <h2 className="text-lg font-semibold mb-4">{t('addSection')}</h2>
         <form action={handleAddSection} className="flex gap-4">
           <input type="hidden" name="restaurantId" value={restaurant.id} />
           <input
             type="text"
             name="name"
-            placeholder="Section name (e.g., Starters)"
+            placeholder={t('sectionNamePlaceholder')}
+            aria-label={t('sectionName')}
             required
             className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
           />
@@ -204,7 +208,7 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
             disabled={isPending}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition disabled:opacity-50"
           >
-            Add Section
+            {t('addSection')}
           </button>
         </form>
       </div>
@@ -213,7 +217,7 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
       <div className="space-y-6">
         {sections.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-6 text-center text-gray-500">
-            No sections yet. Add your first section above!
+            {t('noSections')}
           </div>
         ) : (
           sections.map((section) => (
@@ -225,38 +229,39 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
                   disabled={isPending}
                   className="text-red-500 hover:text-red-700 text-sm disabled:opacity-50"
                 >
-                  Delete Section
+                  {t('deleteSection')}
                 </button>
               </div>
 
               {/* Add Item Form */}
               <div className="bg-gray-50 rounded p-4 mb-4">
-                <h4 className="text-sm font-medium text-gray-700 mb-3">Add Item</h4>
+                <h4 className="text-sm font-medium text-gray-700 mb-3">{t('addItem')}</h4>
                 <form action={handleAddItem} className="grid grid-cols-1 md:grid-cols-4 gap-3">
                   <input type="hidden" name="sectionId" value={section.id} />
                   <input
                     type="text"
                     name="name"
-                    placeholder="Item name"
+                    placeholder={t('itemNamePlaceholder')}
+                    aria-label={t('itemName')}
                     required
                     className="border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                   <input
                     type="text"
                     name="description"
-                    placeholder="Description (optional)"
+                    placeholder={t('itemDescriptionPlaceholder')}
                     className="border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                   <input
                     type="number"
                     name="price"
-                    placeholder="Price"
+                    placeholder={t('price')}
                     step="0.01"
                     required
                     className="border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                   <label className="flex flex-col gap-1 text-sm text-gray-600 md:col-span-2">
-                    Item photo (optional, JPEG, PNG, or WebP; max 5 MB)
+                    {t('itemPhoto')}
                     <input
                       type="file"
                       name="image"
@@ -267,14 +272,14 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
                   <div className="flex items-center gap-4">
                     <label className="flex items-center gap-2 text-sm">
                       <input type="checkbox" name="isAvailable" defaultChecked />
-                      Available
+                      {t('available')}
                     </label>
                     <button
                       type="submit"
                       disabled={isPending}
                       className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm transition disabled:opacity-50"
                     >
-                      Add Item
+                      {t('addItem')}
                     </button>
                   </div>
                 </form>
@@ -282,7 +287,7 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
 
               {/* Items List */}
               {section.items.length === 0 ? (
-                <p className="text-gray-400 text-sm">No items in this section</p>
+                <p className="text-gray-400 text-sm">{t('noItemsInSection')}</p>
               ) : (
                 <div className="space-y-2">
                   {section.items.map((item) => (
@@ -296,7 +301,7 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
                             {item.name}
                           </span>
                           {!item.isAvailable && (
-                            <span className="text-xs text-red-500 font-medium">Sold Out</span>
+                            <span className="text-xs text-red-500 font-medium">{t('soldOut')}</span>
                           )}
                         </div>
                         {item.description && (
@@ -310,7 +315,7 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
                             name="image"
                             accept="image/jpeg,image/png,image/webp"
                             required
-                            aria-label={`Photo for ${item.name}`}
+                            aria-label={`${t('photoFor')} ${item.name}`}
                             className="max-w-40 text-xs file:rounded file:border-0 file:bg-gray-200 file:px-2 file:py-1 file:text-gray-700"
                           />
                           <button
@@ -318,7 +323,7 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
                             disabled={isPending}
                             className="text-blue-600 hover:text-blue-800 text-xs disabled:opacity-50"
                           >
-                            {item.imageUrl ? 'Replace photo' : 'Add photo'}
+                            {item.imageUrl ? t('replacePhoto') : t('addPhoto')}
                           </button>
                         </form>
                         <span className="font-semibold">${Number(item.price).toFixed(2)}</span>
@@ -331,7 +336,7 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
                               : 'bg-green-100 text-green-700 hover:bg-green-200'
                           } disabled:opacity-50`}
                         >
-                          {item.isAvailable ? 'Mark Sold Out' : 'Mark Available'}
+                          {item.isAvailable ? t('markSoldOut') : t('markAvailable')}
                         </button>
                         <button
                           onClick={() => handleDeleteItem(item.id)}

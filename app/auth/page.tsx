@@ -3,8 +3,11 @@
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 import { signUp, signIn } from '@/actions/auth'
+import { useLocale } from '../components/LocaleProvider'
+import { translateError } from '@/lib/i18n'
 
 export default function AuthPage() {
+  const { locale, t } = useLocale()
   const router = useRouter()
   const [isLogin, setIsLogin] = useState(true)
   const [isPending, startTransition] = useTransition()
@@ -20,13 +23,13 @@ export default function AuthPage() {
       const result = await action(formData)
 
       if (result?.error) {
-        setErrorMessage(result.error)
+        setErrorMessage(translateError(locale, result.error))
         console.error('Auth error:', result.error)
         return
       }
 
       if (result?.success) {
-        setSuccessMessage(result.message ?? 'Success!')
+        setSuccessMessage(isLogin ? t('signinSuccess') : t('signupSuccess'))
         window.setTimeout(() => router.push('/dashboard'), 500)
       }
     })
@@ -36,7 +39,7 @@ export default function AuthPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="max-w-md w-full p-8 bg-white rounded-lg shadow-md">
         <h1 className="text-2xl font-bold text-center mb-6">
-          {isLogin ? 'Login' : 'Create Account'}
+          {isLogin ? t('login') : t('createAccount')}
         </h1>
 
         <form action={handleSubmit} className="space-y-4">
@@ -44,29 +47,29 @@ export default function AuthPage() {
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Restaurant Name
+                  {t('restaurantName')}
                 </label>
                 <input
                   type="text"
                   name="restaurantName"
                   required
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="My Awesome Pizza"
+                  placeholder={t('restaurantNamePlaceholder')}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Slug (e.g. my-pizza)
+                  {t('slug')}
                 </label>
                 <input
                   type="text"
                   name="slug"
                   required
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="my-pizza"
+                  placeholder={t('slugPlaceholder')}
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Your public URL: your-domain.com/<span className="font-mono">my-pizza</span>
+                  {t('publicUrl')} your-domain.com/<span className="font-mono">my-pizza</span>
                 </p>
               </div>
             </>
@@ -74,7 +77,7 @@ export default function AuthPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
+              {t('email')}
             </label>
             <input
               type="email"
@@ -87,7 +90,7 @@ export default function AuthPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Password
+              {t('password')}
             </label>
             <input
               type="password"
@@ -98,7 +101,7 @@ export default function AuthPage() {
               placeholder="••••••••"
             />
             {!isLogin && (
-              <p className="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
+              <p className="text-xs text-gray-500 mt-1">{t('minimumPassword')}</p>
             )}
           </div>
 
@@ -119,7 +122,7 @@ export default function AuthPage() {
             disabled={isPending}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isPending ? 'Loading...' : isLogin ? 'Login' : 'Create Account'}
+            {isPending ? t('loading') : isLogin ? t('login') : t('createAccount')}
           </button>
         </form>
 
@@ -127,7 +130,7 @@ export default function AuthPage() {
           onClick={() => setIsLogin(!isLogin)}
           className="mt-4 text-sm text-blue-600 hover:underline w-full text-center"
         >
-          {isLogin ? "Don't have an account? Sign Up" : 'Already have an account? Login'}
+          {isLogin ? t('signupPrompt') : t('loginPrompt')}
         </button>
       </div>
     </div>
