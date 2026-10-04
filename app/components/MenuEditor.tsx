@@ -156,16 +156,16 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <div className="break-words rounded border border-red-200 bg-red-50 px-4 py-3 text-red-700">
           {error}
         </div>
       )}
 
-      <section className="bg-white rounded-lg shadow p-6">
+      <section className="rounded-lg bg-white p-4 shadow sm:p-6">
         <h2 className="text-lg font-semibold mb-4">{t('restaurantProfile')}</h2>
-        <form action={handleUpdateRestaurantProfile} className="grid gap-4 sm:grid-cols-2">
+        <form action={handleUpdateRestaurantProfile} className="grid min-w-0 gap-4 sm:grid-cols-2">
           <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
             {t('description')}
             <textarea
@@ -189,7 +189,7 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
             </label>
             {restaurant.logoUrl && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={restaurant.logoUrl} alt={t('currentRestaurantLogo')} className="h-20 w-20 rounded-full border object-cover" />
+              <img src={restaurant.logoUrl} alt={t('currentRestaurantLogo')} className="h-20 w-20 shrink-0 rounded-full border object-cover" />
             )}
           </div>
           <div className="sm:col-span-2">
@@ -205,9 +205,9 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
       </section>
 
       {/* Add Section */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="rounded-lg bg-white p-4 shadow sm:p-6">
         <h2 className="text-lg font-semibold mb-4">{t('addSection')}</h2>
-        <form action={handleAddSection} className="flex gap-4">
+        <form action={handleAddSection} className="flex flex-col gap-3 sm:flex-row sm:gap-4">
           <input type="hidden" name="restaurantId" value={restaurant.id} />
           <input
             type="text"
@@ -215,12 +215,12 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
             placeholder={t('sectionNamePlaceholder')}
             aria-label={t('sectionName')}
             required
-            className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+            className="min-w-0 flex-1 rounded-md border border-gray-300 px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
           />
           <button
             type="submit"
             disabled={isPending}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition disabled:opacity-50"
+            className="min-h-10 rounded-md bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 disabled:opacity-50 sm:self-start"
           >
             {t('addSection')}
           </button>
@@ -235,9 +235,9 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
           </div>
         ) : (
           sections.map((section) => (
-            <div key={section.id} className="bg-white rounded-lg shadow p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-semibold">{section.name}</h3>
+            <div key={section.id} className="min-w-0 rounded-lg bg-white p-4 shadow sm:p-6">
+              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <h3 className="break-words text-xl font-semibold">{section.name}</h3>
                 <button
                   onClick={() => handleDeleteSection(section.id)}
                   disabled={isPending}
@@ -248,9 +248,9 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
               </div>
 
               {/* Add Item Form */}
-              <div className="bg-gray-50 rounded p-4 mb-4">
+              <div className="mb-4 rounded bg-gray-50 p-3 sm:p-4">
                 <h4 className="text-sm font-medium text-gray-700 mb-3">{t('addItem')}</h4>
-                <form action={handleAddItem} className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <form action={handleAddItem} className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   <input type="hidden" name="sectionId" value={section.id} />
                   <input
                     type="text"
@@ -274,7 +274,7 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
                     required
                     className="border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                   />
-                  <label className="flex flex-col gap-1 text-sm text-gray-600 md:col-span-2">
+                  <label className="flex min-w-0 flex-col gap-1 text-sm text-gray-600 sm:col-span-2">
                     {t('itemPhoto')}
                     <input
                       type="file"
@@ -283,7 +283,7 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
                       className="w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-gray-200 file:px-3 file:py-2 file:text-gray-700 hover:file:bg-gray-300"
                     />
                   </label>
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-wrap items-center gap-3 sm:col-span-2 lg:col-span-1">
                     <label className="flex items-center gap-2 text-sm">
                       <input type="checkbox" name="isAvailable" defaultChecked />
                       {t('available')}
@@ -291,7 +291,7 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
                     <button
                       type="submit"
                       disabled={isPending}
-                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm transition disabled:opacity-50"
+                      className="min-h-10 rounded-md bg-green-600 px-4 py-2 text-sm text-white transition hover:bg-green-700 disabled:opacity-50"
                     >
                       {t('addItem')}
                     </button>
@@ -307,12 +307,12 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
                   {section.items.map((item) => (
                     <div
                       key={item.id}
-                      className="flex flex-col gap-3 p-3 border rounded hover:bg-gray-50"
+                      className="min-w-0 flex flex-col gap-3 overflow-hidden rounded border p-3 hover:bg-gray-50"
                     >
                       {editingItemId === item.id ? (
                         <form
                           action={handleUpdateItem.bind(null, item.id)}
-                          className="grid grid-cols-1 gap-3 md:grid-cols-4"
+                          className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
                         >
                           <input
                             type="text"
@@ -341,7 +341,7 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
                             required
                             className="border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                           />
-                          <div className="flex flex-wrap items-center gap-3">
+                          <div className="flex flex-wrap items-center gap-3 sm:col-span-2 lg:col-span-1">
                             <button
                               type="submit"
                               disabled={isPending}
@@ -360,8 +360,8 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
                           </div>
                         </form>
                       ) : (
-                        <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
-                          <div className="flex items-center gap-3">
+                        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex min-w-0 items-center gap-3">
                             {item.imageUrl ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
@@ -374,7 +374,7 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
                                 {t('noImageAvailable')}
                               </div>
                             )}
-                            <div>
+                            <div className="min-w-0">
                               <div className="flex items-center gap-2">
                                 <span className={`font-medium ${!item.isAvailable ? 'line-through text-gray-400' : ''}`}>
                                   {item.name}
@@ -388,7 +388,7 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
                               )}
                             </div>
                           </div>
-                          <div className="flex flex-wrap items-center gap-3">
+                          <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end sm:gap-3">
                             <form action={handleUpdateItemPhoto.bind(null, item.id)} className="flex flex-wrap items-center gap-2">
                               <input
                                 type="file"
@@ -396,7 +396,7 @@ export default function MenuEditor({ restaurant }: MenuEditorProps) {
                                 accept="image/jpeg,image/png,image/webp"
                                 required
                                 aria-label={`${t('photoFor')} ${item.name}`}
-                                className="max-w-40 text-xs file:rounded file:border-0 file:bg-gray-200 file:px-2 file:py-1 file:text-gray-700"
+                                className="min-w-0 max-w-full text-xs file:rounded file:border-0 file:bg-gray-200 file:px-2 file:py-1 file:text-gray-700 sm:max-w-40"
                               />
                               <button
                                 type="submit"

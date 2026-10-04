@@ -25,24 +25,21 @@ export default async function DashboardPage() {
 
   if (!restaurant) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <form action={signOut}>
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+        <div className="w-full max-w-lg rounded-lg bg-white p-5 shadow sm:p-8">
+          <div className="mb-6 flex justify-end">
+            <form action={signOut}>
               <button
                 type="submit"
-                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm transition"
+                className="rounded-md bg-red-500 px-4 py-2 text-sm text-white transition hover:bg-red-600"
               >
                 {t('signOut')}
               </button>
             </form>
-      <div className="min-h-screen p-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h1 className="text-xl font-semibold mb-4">{t('restaurantNotFound')}</h1>
-            <p className="text-gray-600">{t('contactSupport')}</p>
           </div>
+          <h1 className="mb-4 text-xl font-semibold">{t('restaurantNotFound')}</h1>
+          <p className="text-gray-600">{t('contactSupport')}</p>
         </div>
-
-      </div>
       </div>
     )
   }
@@ -51,23 +48,23 @@ export default async function DashboardPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold">{t('dashboard')}</h1>
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold sm:text-2xl">{t('dashboard')}</h1>
             <p className="text-sm text-gray-500">{restaurant.name}</p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex w-full items-center gap-3 sm:w-auto sm:gap-4">
             <Link
               href={`/${restaurant.slug}`}
               target="_blank"
-              className="text-blue-600 hover:underline text-sm"
+              className="flex min-h-10 flex-1 items-center justify-center rounded-md border border-gray-200 px-3 text-center text-sm text-blue-600 hover:bg-gray-50 hover:underline sm:flex-none sm:border-0 sm:px-0"
             >
               {t('viewMenu')}
             </Link>
             <form action={signOut}>
               <button
                 type="submit"
-                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm transition"
+                className="min-h-10 whitespace-nowrap rounded-md bg-red-500 px-4 py-2 text-sm text-white transition hover:bg-red-600"
               >
                 {t('signOut')}
               </button>
@@ -77,7 +74,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Menu Editor */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="mx-auto max-w-7xl px-3 py-5 sm:px-4 sm:py-8">
         <MenuEditor restaurant={restaurant} />
       </div>
     </div>
