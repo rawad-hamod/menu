@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { signOut } from '@/actions/auth'
 import { getRestaurantMenu } from '@/actions/menu-editor'
 import Link from 'next/link'
-import MenuEditor from '../components/MenuEditor'
+import DashboardTabs from './components/DashboardTabs'
 import { getLocale } from '@/lib/locale-server'
 import { translate } from '@/lib/i18n'
 import QRCode from 'qrcode'
@@ -13,7 +13,6 @@ export default async function DashboardPage() {
   const locale = await getLocale()
   const t = (key: Parameters<typeof translate>[1]) => translate(locale, key)
   const supabase = await createClient()
-  console.log('Supabase client created:', supabase.auth.getUser())
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -22,7 +21,6 @@ export default async function DashboardPage() {
 
   // Get restaurant data with menu
   const restaurant = await getRestaurantMenu();
-  console.log(restaurant)
 
   if (!restaurant) {
     return (
@@ -84,32 +82,13 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Menu Editor */}
-      <div className="mx-auto max-w-7xl space-y-5 px-3 py-5 sm:px-4 sm:py-8">
-        <section className="flex flex-col gap-4 rounded-lg bg-white p-4 shadow sm:flex-row sm:items-center sm:p-5">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={qrCodeDataUrl}
-            alt={`${t('menuQrCode')} — ${restaurant.name}`}
-            width={128}
-            height={128}
-            className="h-32 w-32 self-center rounded border border-gray-200 bg-white p-1 sm:self-auto"
-          />
-          <div className="min-w-0 flex-1 text-center sm:text-start">
-            <h2 className="text-lg font-semibold">{t('menuQrCode')}</h2>
-            <p className="mt-1 text-sm text-gray-600">{t('scanToViewMenu')}</p>
-            <p className="mt-2 break-all text-xs text-gray-500">{menuUrl.toString()}</p>
-          </div>
-          <a
-            href={qrCodeDataUrl}
-            download={`${restaurant.slug}-menu-qr.png`}
-            className="inline-flex min-h-10 items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
-          >
-            {t('downloadQrCode')}
-          </a>
-        </section>
-        <MenuEditor restaurant={restaurant} />
-      </div>
+      <main className="mx-auto max-w-7xl px-3 py-5 sm:px-4 sm:py-8">
+        <DashboardTabs
+          restaurant={restaurant}
+          qrCodeDataUrl={qrCodeDataUrl}
+          menuUrl={menuUrl.toString()}
+        />
+      </main>
     </div>
   )
 }

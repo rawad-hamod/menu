@@ -28,6 +28,7 @@ const itemUpdateSchema = z.object({
 })
 
 const restaurantProfileSchema = z.object({
+  name: z.string().trim().min(1, 'Restaurant name is required').max(120, 'Restaurant name must be 120 characters or fewer'),
   description: z.string().max(500, 'Description must be 500 characters or fewer'),
 })
 
@@ -89,6 +90,7 @@ export async function updateRestaurantProfile(formData: FormData) {
   }
 
   const parsed = restaurantProfileSchema.safeParse({
+    name: formData.get('name'),
     description: formData.get('description'),
   })
   if (!parsed.success) {
@@ -152,7 +154,11 @@ export async function updateRestaurantProfile(formData: FormData) {
 
     await prisma.restaurant.update({
       where: { id: restaurant.id },
-      data: { description: parsed.data.description || null, logoUrl },
+      data: {
+        name: parsed.data.name,
+        description: parsed.data.description || null,
+        logoUrl,
+      },
     })
 
     if (logoFile && restaurant.logoUrl) {
