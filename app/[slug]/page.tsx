@@ -93,13 +93,14 @@ export default async function PublicMenuPage({ params, searchParams }: PageProps
                       {t('noItemsInSection')}
                     </p>
                   ) : (
-                    restaurant.selectedSection.items.map((item) => (
+                    restaurant.selectedSection.items.map((item, index) => (
                       <MenuItemCard
                         key={item.id}
                         name={item.name}
                         price={`$${Number(item.price).toFixed(2)}`}
                         description={item.description}
                         imageUrl={item.imageUrl}
+                        loading={index < 2 ? 'eager' : 'lazy'}
                         isAvailable={item.isAvailable}
                         restaurantName={restaurant.name}
                         restaurantLogoUrl={restaurant.logoUrl}

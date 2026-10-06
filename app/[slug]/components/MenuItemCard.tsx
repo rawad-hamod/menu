@@ -5,6 +5,7 @@ interface MenuItemCardProps {
   price: string
   description: string | null
   imageUrl: string | null
+  loading: 'eager' | 'lazy'
   isAvailable: boolean
   restaurantName: string
   restaurantLogoUrl: string | null
@@ -19,6 +20,7 @@ export default function MenuItemCard({
   price,
   description,
   imageUrl,
+  loading,
   isAvailable,
   restaurantName,
   restaurantLogoUrl,
@@ -39,6 +41,7 @@ export default function MenuItemCard({
             alt={imageUrl ? name : `${restaurantName} logo`}
             fill
             sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 25vw"
+            loading={loading}
             className="object-cover"
           />
         </div>
