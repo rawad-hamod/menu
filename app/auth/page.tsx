@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState, useTransition } from 'react'
+import { useState, useTransition, type FormEvent } from 'react'
 import { signUp, signIn } from '@/actions/auth'
 import { useLocale } from '../components/LocaleProvider'
 import { translateError } from '@/lib/i18n'
@@ -14,9 +14,11 @@ export default function AuthPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
-  const handleSubmit = (formData: FormData) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
     setErrorMessage(null)
     setSuccessMessage(null)
+    const formData = new FormData(event.currentTarget)
 
     startTransition(async () => {
       const action = isLogin ? signIn : signUp
@@ -42,7 +44,7 @@ export default function AuthPage() {
           {isLogin ? t('login') : t('createAccount')}
         </h1>
 
-        <form action={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && (
             <>
               <div>
